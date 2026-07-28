@@ -1,3 +1,6 @@
+#ifdef NDEBUG
+#undef NDEBUG
+#endif
 #import <assert.h>
 #import <AppKit/AppKit.h>
 

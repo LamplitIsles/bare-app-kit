@@ -1,3 +1,6 @@
+#ifdef NDEBUG
+#undef NDEBUG
+#endif
 #import <assert.h>
 #import <AppKit/AppKit.h>
 
@@ -57,6 +60,7 @@ main(void) {
     hidden->terminal_close = YES;
     [hidden close];
     assert(observer->count == 2);
+    hidden->hides_on_close = NO;
 
     BareWindow *utility = [[BareWindow alloc]
       initWithContentRect:NSMakeRect(0, 0, 120, 80)
@@ -96,6 +100,10 @@ main(void) {
     assert(expectedReopen.visible);
     assert((expectedReopen == reopen ? otherReopen : reopen).visible == NO);
     assert(!utility.visible);
+    assert(!bare_app_kit_should_terminate_after_last_window_closed(
+      @[utility, reopen, otherReopen]));
+    assert(bare_app_kit_should_terminate_after_last_window_closed(@[utility]));
+    assert(bare_app_kit_should_terminate_after_last_window_closed(@[]));
 
     [[NSNotificationCenter defaultCenter] removeObserver:observer];
     [normal release];

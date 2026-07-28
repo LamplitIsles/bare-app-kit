@@ -192,7 +192,7 @@ bare__terminate(void) {
 }
 
 - (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)sender {
-  return YES;
+  return bare_app_kit_should_terminate_after_last_window_closed(NSApp.windows);
 }
 
 @end
