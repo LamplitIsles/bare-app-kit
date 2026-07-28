@@ -1,6 +1,7 @@
 exports.Button = require('./lib/button')
 exports.Control = require('./lib/control')
 exports.Slider = require('./lib/slider')
+exports.StatusItem = require('./lib/status-item')
 exports.Switch = require('./lib/switch')
 exports.Text = require('./lib/text')
 exports.TextField = require('./lib/text-field')
