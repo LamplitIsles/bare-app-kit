@@ -74,6 +74,15 @@ test('validates status menu before native mutation', async (t) => {
   await t.exception.all(() => item.addItem('status', 'Again'), /unique/)
   await t.exception.all(() => item.updateItem('missing', { title: 'x' }), /Unknown/)
   await t.exception.all(() => item.addItem(1, 'x'), /string/)
+  await t.exception.all(() => item.addItem('nul\0id', 'x'), /NUL/)
+  await t.exception.all(() => item.addItem('nul-title', 'x\0y'), /NUL/)
+  await t.exception.all(() => item.updateItem('status', { title: 'x\0y' }), /NUL/)
+  t.is(calls.length, count)
+})
+
+test('rejects NUL in status item construction before native mutation', async (t) => {
+  const count = calls.length
+  await t.exception.all(() => new StatusItem({ systemImageName: 'net\0work' }), /NUL/)
   t.is(calls.length, count)
 })
 

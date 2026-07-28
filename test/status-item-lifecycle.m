@@ -25,13 +25,15 @@ main(void) {
     [owner->items setObject:item forKey:@"status"];
     assert(!owner->menu.autoenablesItems);
     assert(!item.enabled);
-    item.enabled = YES;
+    bare_app_kit_status_item_update_native(owner, @"status", @"Online", YES, YES, YES);
+    assert([item.title isEqualToString:@"Online"]);
     assert(item.enabled);
 
     [owner prepareForBareTermination];
     assert(item.target == nil);
     [owner destroy];
     [owner destroy];
+    assert(owner->removed_from_status_bar);
     assert(owner->status_item == nil);
     assert(owner->menu == nil);
     [owner release];

@@ -18,10 +18,13 @@ bare_app_kit__string(js_env_t *env, js_value_t *value) {
   size_t len;
   err = js_get_value_string_utf8(env, value, NULL, 0, &len);
   assert(err == 0);
-  char *buffer = malloc(++len);
-  err = js_get_value_string_utf8(env, value, (utf8_t *) buffer, len, &len);
+  char *buffer = malloc(len + 1);
+  size_t written;
+  err = js_get_value_string_utf8(env, value, (utf8_t *) buffer, len + 1, &written);
   assert(err == 0);
-  NSString *result = [[NSString alloc] initWithUTF8String:buffer];
+  NSString *result = [[NSString alloc] initWithBytes:buffer
+                                              length:written
+                                            encoding:NSUTF8StringEncoding];
   free(buffer);
   return [result autorelease];
 }
@@ -36,6 +39,7 @@ bare_app_kit__string(js_env_t *env, js_value_t *value) {
   NSMutableDictionary *items;
   BOOL observing;
   BOOL destroyed;
+  BOOL removed_from_status_bar;
 }
 - (void)prepareForBareTermination;
 - (void)destroy;
@@ -78,6 +82,7 @@ bare_app_kit__string(js_env_t *env, js_value_t *value) {
   [self prepareForBareTermination];
   if (status_item != nil) {
     [[NSStatusBar systemStatusBar] removeStatusItem:status_item];
+    removed_from_status_bar = YES;
     [status_item release];
     status_item = nil;
   }
@@ -108,7 +113,10 @@ bare_app_kit__string(js_env_t *env, js_value_t *value) {
   err = js_get_reference_value(env, on_select, &callback);
   assert(err == 0);
   js_value_t *id;
-  err = js_create_string_utf8(env, (const utf8_t *) identifier.UTF8String, -1, &id);
+  err = js_create_string_utf8(env,
+                              (const utf8_t *) identifier.UTF8String,
+                              [identifier lengthOfBytesUsingEncoding:NSUTF8StringEncoding],
+                              &id);
   assert(err == 0);
   err = js_call_function(env, receiver, callback, 1, &id, NULL);
   (void) err;
@@ -117,6 +125,18 @@ bare_app_kit__string(js_env_t *env, js_value_t *value) {
 }
 
 @end
+
+static void
+bare_app_kit_status_item_update_native(BareStatusItem *handle,
+                                       NSString *identifier,
+                                       NSString *title,
+                                       BOOL has_title,
+                                       BOOL enabled,
+                                       BOOL has_enabled) {
+  NSMenuItem *item = [handle->items objectForKey:identifier];
+  if (has_title) item.title = title;
+  if (has_enabled) item.enabled = enabled;
+}
 
 static js_value_t *
 bare_app_kit_status_item_init(js_env_t *env, js_callback_info_t *info) {
@@ -222,10 +242,13 @@ bare_app_kit_status_item_update_item(js_env_t *env, js_callback_info_t *info) {
   err = js_get_value_bool(env, argv[4], &enabled); assert(err == 0);
   err = js_get_value_bool(env, argv[5], &has_enabled); assert(err == 0);
   @autoreleasepool {
-    BareStatusItem *handle = bare_app_kit__status_handle(env, argv[0]);
-    NSMenuItem *item = [handle->items objectForKey:bare_app_kit__string(env, argv[1])];
-    if (has_title) item.title = bare_app_kit__string(env, argv[2]);
-    if (has_enabled) item.enabled = enabled;
+    bare_app_kit_status_item_update_native(
+      bare_app_kit__status_handle(env, argv[0]),
+      bare_app_kit__string(env, argv[1]),
+      bare_app_kit__string(env, argv[2]),
+      has_title,
+      enabled,
+      has_enabled);
   }
   return NULL;
 }

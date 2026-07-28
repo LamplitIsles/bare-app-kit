@@ -74,10 +74,27 @@ main(void) {
     reopen->hides_on_close = YES;
     reopen.releasedWhenClosed = NO;
     [reopen orderOut:nil];
+    BareWindow *otherReopen = [[BareWindow alloc]
+      initWithContentRect:NSMakeRect(0, 0, 120, 80)
+                styleMask:style
+                  backing:NSBackingStoreBuffered
+                    defer:NO];
+    otherReopen->hides_on_close = YES;
+    otherReopen.releasedWhenClosed = NO;
+    [otherReopen orderOut:nil];
+    BareWindow *expectedReopen = nil;
+    for (NSWindow *window in NSApp.orderedWindows) {
+      if (window == reopen || window == otherReopen) {
+        expectedReopen = (BareWindow *) window;
+        break;
+      }
+    }
+    assert(expectedReopen != nil);
     assert(!bare_app_kit_handle_reopen(YES));
     assert(!reopen.visible);
     assert(bare_app_kit_handle_reopen(NO));
-    assert(reopen.visible);
+    assert(expectedReopen.visible);
+    assert((expectedReopen == reopen ? otherReopen : reopen).visible == NO);
     assert(!utility.visible);
 
     [[NSNotificationCenter defaultCenter] removeObserver:observer];
@@ -85,6 +102,7 @@ main(void) {
     [hidden release];
     [utility release];
     [reopen release];
+    [otherReopen release];
     [observer release];
   }
   return 0;
