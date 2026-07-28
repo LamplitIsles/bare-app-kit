@@ -170,6 +170,12 @@ bare__terminate(void) {
 }
 
 - (void)applicationWillTerminate:(NSNotification *)notification {
+  SEL prepare = @selector(prepareForBareTermination);
+  for (NSWindow *window in NSApp.windows) {
+    if ([window respondsToSelector:prepare]) {
+      [window performSelector:prepare];
+    }
+  }
   bare__terminate();
 }
 

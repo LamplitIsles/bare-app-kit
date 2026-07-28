@@ -19,8 +19,12 @@
 
 @implementation BareWindow
 
-- (void)dealloc {
+- (void)prepareForBareTermination {
+  if (env == NULL) return;
+
   int err;
+
+  self.delegate = nil;
 
   err = js_delete_reference(env, on_did_resize);
   assert(err == 0);
@@ -34,10 +38,22 @@
   err = js_delete_reference(env, ctx);
   assert(err == 0);
 
+  env = NULL;
+  ctx = NULL;
+  on_did_resize = NULL;
+  on_did_move = NULL;
+  on_will_close = NULL;
+}
+
+- (void)dealloc {
+  [self prepareForBareTermination];
+
   [super dealloc];
 }
 
 - (void)windowDidResize:(NSNotification *)notification {
+  if (env == NULL) return;
+
   int err;
 
   js_handle_scope_t *scope;
@@ -60,6 +76,8 @@
 }
 
 - (void)windowDidMove:(NSNotification *)notification {
+  if (env == NULL) return;
+
   int err;
 
   js_handle_scope_t *scope;
@@ -82,6 +100,8 @@
 }
 
 - (void)windowWillClose:(NSNotification *)notification {
+  if (env == NULL) return;
+
   int err;
 
   js_handle_scope_t *scope;
