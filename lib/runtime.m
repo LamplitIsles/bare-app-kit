@@ -9,6 +9,9 @@
 
 #import <AppKit/AppKit.h>
 
+#import "lifecycle.h"
+#import "window-lifecycle.h"
+
 static uv_barrier_t bare__platform_ready;
 static uv_async_t bare__platform_shutdown;
 static uv_thread_t bare__platform_thread;
@@ -170,6 +173,9 @@ bare__terminate(void) {
 }
 
 - (void)applicationWillTerminate:(NSNotification *)notification {
+  [[NSNotificationCenter defaultCenter]
+    postNotificationName:BareApplicationWillTerminateNotification
+                  object:self];
   SEL prepare = @selector(prepareForBareTermination);
   for (NSWindow *window in NSApp.windows) {
     if ([window respondsToSelector:prepare]) {
@@ -177,6 +183,12 @@ bare__terminate(void) {
     }
   }
   bare__terminate();
+}
+
+- (BOOL)applicationShouldHandleReopen:(NSApplication *)sender
+                    hasVisibleWindows:(BOOL)hasVisibleWindows {
+  bare_app_kit_handle_reopen(hasVisibleWindows);
+  return YES;
 }
 
 - (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)sender {

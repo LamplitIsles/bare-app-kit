@@ -13,11 +13,23 @@
   js_ref_t *on_did_resize;
   js_ref_t *on_did_move;
   js_ref_t *on_will_close;
+  BOOL hides_on_close;
+  BOOL terminal_close;
 }
 
 @end
 
 @implementation BareWindow
+
+- (BOOL)bareHidesOnClose {
+  return hides_on_close;
+}
+
+- (BOOL)windowShouldClose:(NSWindow *)sender {
+  if (!hides_on_close || terminal_close) return YES;
+  [self orderOut:sender];
+  return NO;
+}
 
 - (void)prepareForBareTermination {
   if (env == NULL) return;
@@ -313,9 +325,65 @@ bare_app_kit_window_close(js_env_t *env, js_callback_info_t *info) {
   @autoreleasepool {
     BareWindow *window = (__bridge BareWindow *) handle;
 
+    window->terminal_close = YES;
     [window close];
+    window->terminal_close = NO;
   }
 
+  return NULL;
+}
+
+static js_value_t *
+bare_app_kit_window_hides_on_close(js_env_t *env, js_callback_info_t *info) {
+  int err;
+  size_t argc = 2;
+  js_value_t *argv[2];
+  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  assert(err == 0);
+  assert(argc == 1 || argc == 2);
+  void *handle;
+  err = js_get_value_external(env, argv[0], &handle);
+  assert(err == 0);
+  BareWindow *window = (__bridge BareWindow *) handle;
+  if (argc == 1) {
+    js_value_t *result;
+    err = js_get_boolean(env, window->hides_on_close, &result);
+    assert(err == 0);
+    return result;
+  }
+  bool value;
+  err = js_get_value_bool(env, argv[1], &value);
+  assert(err == 0);
+  window->hides_on_close = value;
+  return NULL;
+}
+
+static js_value_t *
+bare_app_kit_window_hide(js_env_t *env, js_callback_info_t *info) {
+  int err;
+  size_t argc = 1;
+  js_value_t *argv[1];
+  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  assert(err == 0);
+  void *handle;
+  err = js_get_value_external(env, argv[0], &handle);
+  assert(err == 0);
+  [(__bridge BareWindow *) handle orderOut:nil];
+  return NULL;
+}
+
+static js_value_t *
+bare_app_kit_window_show(js_env_t *env, js_callback_info_t *info) {
+  int err;
+  size_t argc = 1;
+  js_value_t *argv[1];
+  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  assert(err == 0);
+  void *handle;
+  err = js_get_value_external(env, argv[0], &handle);
+  assert(err == 0);
+  [NSApp activateIgnoringOtherApps:YES];
+  [(__bridge BareWindow *) handle makeKeyAndOrderFront:nil];
   return NULL;
 }
 
