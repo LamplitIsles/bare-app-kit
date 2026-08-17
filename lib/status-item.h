@@ -162,9 +162,14 @@ bare_app_kit_status_item_init(js_env_t *env, js_callback_info_t *info) {
     handle->menu.autoenablesItems = NO;
     handle->items = [[NSMutableDictionary alloc] init];
     handle->status_item.menu = handle->menu;
-    handle->status_item.button.image = [NSImage imageWithSystemSymbolName:symbol
-                                                accessibilityDescription:description];
-    handle->status_item.button.image.template = YES;
+    if (symbol.length == 0) {
+      handle->status_item.button.image = [NSImage imageNamed:NSImageNameApplicationIcon];
+      handle->status_item.button.image.accessibilityDescription = description;
+    } else {
+      handle->status_item.button.image = [NSImage imageWithSystemSymbolName:symbol
+                                                  accessibilityDescription:description];
+      handle->status_item.button.image.template = YES;
+    }
     handle->env = env;
     err = js_create_reference(env, argv[2], 1, &handle->ctx);
     assert(err == 0);

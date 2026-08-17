@@ -8,6 +8,8 @@ npm i bare-app-kit
 
 ## Status items
 
+Omit `systemImageName` to use the packaged application's icon.
+
 ```js
 const AppKit = require('bare-app-kit')
 

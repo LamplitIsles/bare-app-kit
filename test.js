@@ -66,6 +66,12 @@ test('builds and updates a status menu', (t) => {
   ])
 })
 
+test('uses the packaged application icon when no symbol is supplied', (t) => {
+  new StatusItem({ accessibilityDescription: 'Kepos' })
+
+  t.alike(calls.at(-1), ['init', '', 'Kepos'])
+})
+
 test('validates status menu before native mutation', async (t) => {
   const item = new StatusItem({ systemImageName: 'network' })
   item.addItem('status', 'Starting')
