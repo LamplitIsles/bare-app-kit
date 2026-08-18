@@ -9,6 +9,7 @@
 #import "lib/control.h"
 #import "lib/slider.h"
 #import "lib/switch.h"
+#import "lib/status-item.h"
 #import "lib/text.h"
 #import "lib/text-field.h"
 #import "lib/window.h"
@@ -76,6 +77,18 @@ bare_app_kit_exports(js_env_t *env, js_value_t *exports) {
   V("switchInit", bare_app_kit_switch_init)
   V("switchState", bare_app_kit_switch_state)
 
+  V("statusItemInit", bare_app_kit_status_item_init)
+  V("statusItemAddItem", bare_app_kit_status_item_add_item)
+  V("statusItemAddSeparator", bare_app_kit_status_item_add_separator)
+  V("statusItemUpdateItem", bare_app_kit_status_item_update_item)
+  V("statusItemDestroy", bare_app_kit_status_item_destroy)
+#ifdef BARE_APP_KIT_TESTING
+  V("statusItemTestingState", bare_app_kit_status_item_testing_state)
+  V("statusItemTestingDeleteCount", bare_app_kit_status_item_testing_delete_count)
+  V("statusItemTestingPrepare", bare_app_kit_status_item_testing_prepare)
+  V("statusItemTestingLateSelect", bare_app_kit_status_item_testing_late_select)
+#endif
+
   V("textInit", bare_app_kit_text_init)
   V("textString", bare_app_kit_text_string)
   V("textEditable", bare_app_kit_text_editable)
@@ -108,9 +121,13 @@ bare_app_kit_exports(js_env_t *env, js_value_t *exports) {
 
   V("windowInit", bare_app_kit_window_init)
   V("windowContentView", bare_app_kit_window_content_view)
+  V("windowTitle", bare_app_kit_window_title)
   V("windowTitlebarAppearsTransparent", bare_app_kit_window_titlebar_appears_transparent)
   V("windowCenter", bare_app_kit_window_center)
   V("windowClose", bare_app_kit_window_close)
+  V("windowHidesOnClose", bare_app_kit_window_hides_on_close)
+  V("windowHide", bare_app_kit_window_hide)
+  V("windowShow", bare_app_kit_window_show)
   V("windowMakeKeyWindow", bare_app_kit_window_make_key_window)
   V("windowOrderBack", bare_app_kit_window_order_back)
   V("windowOrderFront", bare_app_kit_window_order_front)

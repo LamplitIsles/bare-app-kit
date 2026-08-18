@@ -20,7 +20,8 @@
   "scripts": {
     "format": "prettier --write . && lunte --fix",
     "lint": "prettier --check . && lunte",
-    "test": "brittle-bare --coverage test.js"
+    "test": "brittle-node test.js",
+    "test:native-lifecycle": "node test/native-lifecycle.js"
   },
   "repository": {
     "type": "git",

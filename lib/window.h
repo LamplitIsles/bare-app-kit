@@ -13,14 +13,30 @@
   js_ref_t *on_did_resize;
   js_ref_t *on_did_move;
   js_ref_t *on_will_close;
+  BOOL hides_on_close;
+  BOOL terminal_close;
 }
 
 @end
 
 @implementation BareWindow
 
-- (void)dealloc {
+- (BOOL)bareHidesOnClose {
+  return hides_on_close;
+}
+
+- (BOOL)windowShouldClose:(NSWindow *)sender {
+  if (!hides_on_close || terminal_close) return YES;
+  [self orderOut:sender];
+  return NO;
+}
+
+- (void)prepareForBareTermination {
+  if (env == NULL) return;
+
   int err;
+
+  self.delegate = nil;
 
   err = js_delete_reference(env, on_did_resize);
   assert(err == 0);
@@ -34,10 +50,22 @@
   err = js_delete_reference(env, ctx);
   assert(err == 0);
 
+  env = NULL;
+  ctx = NULL;
+  on_did_resize = NULL;
+  on_did_move = NULL;
+  on_will_close = NULL;
+}
+
+- (void)dealloc {
+  [self prepareForBareTermination];
+
   [super dealloc];
 }
 
 - (void)windowDidResize:(NSNotification *)notification {
+  if (env == NULL) return;
+
   int err;
 
   js_handle_scope_t *scope;
@@ -60,6 +88,8 @@
 }
 
 - (void)windowDidMove:(NSNotification *)notification {
+  if (env == NULL) return;
+
   int err;
 
   js_handle_scope_t *scope;
@@ -82,6 +112,8 @@
 }
 
 - (void)windowWillClose:(NSNotification *)notification {
+  if (env == NULL) return;
+
   int err;
 
   js_handle_scope_t *scope;
@@ -214,6 +246,51 @@ bare_app_kit_window_content_view(js_env_t *env, js_callback_info_t *info) {
 }
 
 static js_value_t *
+bare_app_kit_window_title(js_env_t *env, js_callback_info_t *info) {
+  int err;
+
+  size_t argc = 2;
+  js_value_t *argv[2];
+
+  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  assert(err == 0);
+
+  assert(argc == 1 || argc == 2);
+
+  void *handle;
+  err = js_get_value_external(env, argv[0], &handle);
+  assert(err == 0);
+
+  js_value_t *result = NULL;
+
+  @autoreleasepool {
+    BareWindow *window = (__bridge BareWindow *) handle;
+
+    if (argc == 1) {
+      NSString *title = window.title;
+
+      err = js_create_string_utf8(env, (const utf8_t *) [title UTF8String], -1, &result);
+      assert(err == 0);
+    } else {
+      size_t len;
+      err = js_get_value_string_utf8(env, argv[1], NULL, 0, &len);
+      assert(err == 0);
+
+      len += 1 /* NULL */;
+      char *title = malloc(len);
+
+      err = js_get_value_string_utf8(env, argv[1], (utf8_t *) title, len, &len);
+      assert(err == 0);
+
+      window.title = [NSString stringWithUTF8String:title];
+      free(title);
+    }
+  }
+
+  return result;
+}
+
+static js_value_t *
 bare_app_kit_window_titlebar_appears_transparent(js_env_t *env, js_callback_info_t *info) {
   int err;
 
@@ -293,9 +370,65 @@ bare_app_kit_window_close(js_env_t *env, js_callback_info_t *info) {
   @autoreleasepool {
     BareWindow *window = (__bridge BareWindow *) handle;
 
+    window->terminal_close = YES;
     [window close];
+    window->terminal_close = NO;
   }
 
+  return NULL;
+}
+
+static js_value_t *
+bare_app_kit_window_hides_on_close(js_env_t *env, js_callback_info_t *info) {
+  int err;
+  size_t argc = 2;
+  js_value_t *argv[2];
+  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  assert(err == 0);
+  assert(argc == 1 || argc == 2);
+  void *handle;
+  err = js_get_value_external(env, argv[0], &handle);
+  assert(err == 0);
+  BareWindow *window = (__bridge BareWindow *) handle;
+  if (argc == 1) {
+    js_value_t *result;
+    err = js_get_boolean(env, window->hides_on_close, &result);
+    assert(err == 0);
+    return result;
+  }
+  bool value;
+  err = js_get_value_bool(env, argv[1], &value);
+  assert(err == 0);
+  window->hides_on_close = value;
+  return NULL;
+}
+
+static js_value_t *
+bare_app_kit_window_hide(js_env_t *env, js_callback_info_t *info) {
+  int err;
+  size_t argc = 1;
+  js_value_t *argv[1];
+  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  assert(err == 0);
+  void *handle;
+  err = js_get_value_external(env, argv[0], &handle);
+  assert(err == 0);
+  [(__bridge BareWindow *) handle orderOut:nil];
+  return NULL;
+}
+
+static js_value_t *
+bare_app_kit_window_show(js_env_t *env, js_callback_info_t *info) {
+  int err;
+  size_t argc = 1;
+  js_value_t *argv[1];
+  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  assert(err == 0);
+  void *handle;
+  err = js_get_value_external(env, argv[0], &handle);
+  assert(err == 0);
+  [NSApp activateIgnoringOtherApps:YES];
+  [(__bridge BareWindow *) handle makeKeyAndOrderFront:nil];
   return NULL;
 }
 

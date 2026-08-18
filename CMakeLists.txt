@@ -5,6 +5,8 @@ find_package(cmake-fetch REQUIRED PATHS node_modules/cmake-fetch)
 
 project(bare_app_kit C OBJC)
 
+include(CTest)
+
 fetch_package("github:holepunchto/bare@1.29.4")
 fetch_package("github:holepunchto/libpath")
 
@@ -62,3 +64,13 @@ target_link_libraries(
 bare_target(target)
 
 install(TARGETS bare_runtime RUNTIME DESTINATION ${target})
+
+if(BUILD_TESTING)
+  add_executable(window_lifecycle_test test/window-lifecycle.m)
+  target_link_libraries(window_lifecycle_test PRIVATE bare_static "-framework AppKit")
+  add_test(NAME window_lifecycle COMMAND window_lifecycle_test)
+
+  add_executable(status_item_lifecycle_test test/status-item-lifecycle.m)
+  target_link_libraries(status_item_lifecycle_test PRIVATE bare_static "-framework AppKit")
+  add_test(NAME status_item_lifecycle COMMAND status_item_lifecycle_test)
+endif()
