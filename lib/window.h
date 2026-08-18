@@ -246,6 +246,51 @@ bare_app_kit_window_content_view(js_env_t *env, js_callback_info_t *info) {
 }
 
 static js_value_t *
+bare_app_kit_window_title(js_env_t *env, js_callback_info_t *info) {
+  int err;
+
+  size_t argc = 2;
+  js_value_t *argv[2];
+
+  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  assert(err == 0);
+
+  assert(argc == 1 || argc == 2);
+
+  void *handle;
+  err = js_get_value_external(env, argv[0], &handle);
+  assert(err == 0);
+
+  js_value_t *result = NULL;
+
+  @autoreleasepool {
+    BareWindow *window = (__bridge BareWindow *) handle;
+
+    if (argc == 1) {
+      NSString *title = window.title;
+
+      err = js_create_string_utf8(env, (const utf8_t *) [title UTF8String], -1, &result);
+      assert(err == 0);
+    } else {
+      size_t len;
+      err = js_get_value_string_utf8(env, argv[1], NULL, 0, &len);
+      assert(err == 0);
+
+      len += 1 /* NULL */;
+      char *title = malloc(len);
+
+      err = js_get_value_string_utf8(env, argv[1], (utf8_t *) title, len, &len);
+      assert(err == 0);
+
+      window.title = [NSString stringWithUTF8String:title];
+      free(title);
+    }
+  }
+
+  return result;
+}
+
+static js_value_t *
 bare_app_kit_window_titlebar_appears_transparent(js_env_t *env, js_callback_info_t *info) {
   int err;
 

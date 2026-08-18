@@ -121,6 +121,7 @@ bare_app_kit_exports(js_env_t *env, js_value_t *exports) {
 
   V("windowInit", bare_app_kit_window_init)
   V("windowContentView", bare_app_kit_window_content_view)
+  V("windowTitle", bare_app_kit_window_title)
   V("windowTitlebarAppearsTransparent", bare_app_kit_window_titlebar_appears_transparent)
   V("windowCenter", bare_app_kit_window_center)
   V("windowClose", bare_app_kit_window_close)
